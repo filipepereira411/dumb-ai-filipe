@@ -3,7 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FilipeAI - Chat</title>
+    <title>FilipeAI - Chat com Login e Notas</title>
+    
+    <!-- 
+      ========================================================================
+      NOTAS DE DESENVOLVIMENTO / ARQUITETURA DO SISTEMA:
+      1. SEGURANÇA: Este sistema usa credenciais fixas expostas no código do lado
+         do cliente (Client-Side). Para ambientes de produção real, as validações
+         devem ser feitas através de um servidor (Back-End) e base de dados.
+      2. PERSISTÊNCIA: Os dados da sessão e as mensagens não são guardados ao 
+         recarregar a página (F5). Para manter as sessões ativas, seria necessário
+         implementar localStorage ou Cookies.
+      3. CREDENCIAIS PADRÃO PARA TESTE:
+         - Utilizador: filipe
+         - Palavra-passe: 1234
+      ========================================================================
+    -->
+
     <style>
         * {
             margin: 0;
@@ -17,15 +33,16 @@
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            background-color: #0d1117;
+            background-color: #0d1117; /* Tom escuro padrão estilo GitHub */
             font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             color: #ffffff;
             padding: 20px;
         }
 
+        /* Cabeçalho Principal */
         .ai-container {
             text-align: center;
-            margin-bottom: 30px;
+            margin-bottom: 20px;
         }
 
         .ai-text {
@@ -40,20 +57,72 @@
             animation: glow 3s ease infinite alternate;
         }
 
-        .ai-badge {
-            margin-top: 5px;
-            display: inline-block;
-            padding: 3px 12px;
-            font-size: 0.8rem;
-            color: #00f2fe;
-            border: 1px solid #00f2fe;
-            border-radius: 20px;
-            text-transform: uppercase;
-            letter-spacing: 3px;
-            box-shadow: 0 0 10px rgba(0, 242, 254, 0.2);
+        /* NOTA DE DESIGN: Cartão de Autenticação (Ecrã de Login) */
+        .auth-card {
+            width: 100%;
+            max-width: 400px;
+            background: rgba(22, 27, 34, 0.8);
+            border: 1px solid #30363d;
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+            text-align: center;
         }
 
-        /* Caixa de Chat */
+        .auth-card h2 {
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            color: #4facfe;
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+            text-align: left;
+        }
+
+        .input-group label {
+            display: block;
+            font-size: 0.85rem;
+            color: #8b949e;
+            margin-bottom: 5px;
+        }
+
+        .input-group input {
+            width: 100%;
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 12px;
+            color: #ffffff;
+            font-size: 0.95rem;
+            outline: none;
+        }
+
+        .input-group input:focus {
+            border-color: #58a6ff;
+        }
+
+        .auth-btn {
+            width: 100%;
+            background: linear-gradient(45deg, #00f2fe, #4facfe);
+            border: none;
+            border-radius: 8px;
+            padding: 12px;
+            color: #0d1117;
+            font-weight: bold;
+            font-size: 1rem;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        .error-message {
+            color: #f85149;
+            font-size: 0.85rem;
+            margin-top: 10px;
+            display: none; /* Só aparece via JS em caso de erro */
+        }
+
+        /* NOTA DE DESIGN: Estrutura do Contentor do Chat */
         .chat-wrapper {
             width: 100%;
             max-width: 600px;
@@ -61,9 +130,44 @@
             border: 1px solid #30363d;
             border-radius: 16px;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
-            display: flex;
+            display: none; /* Escondido por padrão, ativado após login */
             flex-direction: column;
             overflow: hidden;
+        }
+
+        .chat-header {
+            background: #161b22;
+            padding: 15px 20px;
+            border-bottom: 1px solid #30363d;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .user-info {
+            font-size: 0.9rem;
+            color: #8b949e;
+        }
+
+        .user-info span {
+            color: #00f2fe;
+            font-weight: bold;
+        }
+
+        .logout-btn {
+            background: transparent;
+            border: 1px solid #f85149;
+            color: #f85149;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+        }
+
+        .logout-btn:hover {
+            background: #f85149;
+            color: #ffffff;
         }
 
         .chat-box {
@@ -100,7 +204,6 @@
             border: 1px solid #30363d;
         }
 
-        /* Área de Input */
         .input-area {
             display: flex;
             padding: 15px;
@@ -118,11 +221,6 @@
             color: #ffffff;
             font-size: 0.95rem;
             outline: none;
-            transition: border-color 0.2s;
-        }
-
-        .input-area input:focus {
-            border-color: #58a6ff;
         }
 
         .input-area button {
@@ -132,13 +230,7 @@
             padding: 0 20px;
             color: #0d1117;
             font-weight: bold;
-            font-size: 0.95rem;
             cursor: pointer;
-            transition: opacity 0.2s;
-        }
-
-        .input-area button:hover {
-            opacity: 0.9;
         }
 
         @keyframes glow {
@@ -154,14 +246,34 @@
 </head>
 <body>
 
+    <!-- Título do Sistema -->
     <div class="ai-container">
         <h1 class="ai-text">FilipeAI</h1>
-        <div class="ai-badge">Online</div>
     </div>
 
-    <div class="chat-wrapper">
+    <!-- BLOCO 1: Interface de Login -->
+    <div class="auth-card" id="authCard">
+        <h2>Aceder ao Sistema</h2>
+        <div class="input-group">
+            <label for="username">Utilizador</label>
+            <input type="text" id="username" placeholder="Ex: filipe">
+        </div>
+        <div class="input-group">
+            <label for="password">Palavra-passe</label>
+            <input type="password" id="password" placeholder="••••">
+        </div>
+        <button class="auth-btn" onclick="handleLogin()">Entrar</button>
+        <div class="error-message" id="errorMessage">Utilizador ou palavra-passe incorretos!</div>
+    </div>
+
+    <!-- BLOCO 2: Interface de Conversação (Inicialmente oculta) -->
+    <div class="chat-wrapper" id="chatWrapper">
+        <div class="chat-header">
+            <div class="user-info">Sessão iniciada como: <span id="displayUser"></span></div>
+            <button class="logout-btn" onclick="handleLogout()">Sair (Logout)</button>
+        </div>
         <div class="chat-box" id="chatBox">
-            <div class="message ai">Olá! Eu sou o FilipeAI. Como posso ajudar-te hoje?</div>
+            <div class="message ai">Autenticação bem-sucedida! Como posso ajudar-te hoje?</div>
         </div>
         <div class="input-area">
             <input type="text" id="userInput" placeholder="Escreve uma mensagem..." autocomplete="off">
@@ -169,54 +281,31 @@
         </div>
     </div>
 
+    <!-- LÓGICA DO SISTEMA (JAVASCRIPT) -->
     <script>
+        // Mapeamento dos elementos estruturais da página
+        const authCard = document.getElementById('authCard');
+        const chatWrapper = document.getElementById('chatWrapper');
+        const usernameInput = document.getElementById('username');
+        const passwordInput = document.getElementById('password');
+        const errorMessage = document.getElementById('errorMessage');
+        const displayUser = document.getElementById('displayUser');
         const chatBox = document.getElementById('chatBox');
         const userInput = document.getElementById('userInput');
 
-        // Respostas automáticas simuladas da IA
-        const aiResponses = [
-            "Estou aqui para processar qualquer comando.",
-            "Interessante! Conta-me mais sobre isso.",
-            "Como inteligência artificial avançada, estou pronta para o próximo passo.",
-            "O meu sistema está a funcionar com 100% de eficiência.",
-            "FilipeAI compreendeu a tua mensagem perfeitamente."
-        ];
+        // NOTA: Base de dados simulada localmente no código
+        const CREDENTIALS = { user: "filipe", pass: "1234" };
 
-        function sendMessage() {
-            const text = userInput.value.trim();
-            if (!text) return;
+        /**
+         * Executa o processo de Login.
+         * Avalia as entradas e altera o display CSS para comutar as interfaces.
+         */
+        function handleLogin() {
+            const user = usernameInput.value.trim();
+            const pass = passwordInput.value;
 
-            // 1. Adicionar mensagem do utilizador
-            appendMessage(text, 'user');
-            userInput.value = '';
-
-            // 2. Simular efeito de "A digitar..."
-            const typingDiv = appendMessage('A digitar...', 'ai');
-            
-            setTimeout(() => {
-                // Remover o indicador de digitação e colocar a resposta final
-                typingDiv.remove();
-                const randomResponse = aiResponses[Math.floor(Math.random() * aiResponses.length)];
-                appendMessage(randomResponse, 'ai');
-            }, 1200);
-        }
-
-        function appendMessage(text, sender) {
-            const msgDiv = document.createElement('div');
-            msgDiv.classList.add('message', sender);
-            msgDiv.innerText = text;
-            chatBox.appendChild(msgDiv);
-            chatBox.scrollTop = chatBox.scrollHeight; // Scroll automático para baixo
-            return msgDiv;
-        }
-
-        // Permitir enviar pressionando a tecla Enter
-        userInput.addEventListener('keypress', function (e) {
-            if (e.key === 'Enter') {
-                sendMessage();
-            }
-        });
-    </script>
-
-</body>
-</html>
+            // Validação estrita baseada no objeto CREDENTIALS
+            if (user === CREDENTIALS.user && pass === CREDENTIALS.pass) {
+                authCard.style.display = 'none';      // Oculta bloco de login
+                chatWrapper.style.display = 'flex';   // Exibe bloco do chat
+                displayUser.innerText = user;         // Exibe o utilizador ativo no topo
