@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FilipeAI</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #0d1117;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            overflow: hidden;
+        }
+
+        .ai-container {
+            text-align: center;
+            position: relative;
+        }
+
+        .ai-text {
+            font-size: 5rem;
+            font-weight: 800;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            background: linear-gradient(45deg, #00f2fe, #4facfe, #6a11cb);
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: glow 3s ease infinite alternate;
+        }
+
+        .ai-badge {
+            margin-top: 10px;
+            display: inline-block;
+            padding: 5px 15px;
+            font-size: 0.9rem;
+            color: #00f2fe;
+            border: 1px solid #00f2fe;
+            border-radius: 20px;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            box-shadow: 0 0 10px rgba(0, 242, 254, 0.2);
+        }
+
+        @keyframes glow {
+            0% {
+                background-position: 0% 50%;
+                filter: drop-shadow(0 0 2px rgba(0, 242, 254, 0.4));
+            }
+            100% {
+                background-position: 100% 50%;
+                filter: drop-shadow(0 0 15px rgba(79, 172, 254, 0.8));
+            }
+        }
+
+        @media (max-width: 600px) {
+            .ai-text {
+                font-size: 3rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="ai-container">
+        <h1 class="ai-text">FilipeAI</h1>
+        <div class="ai-badge">Artificial Intelligence</div>
+    </div>
+
+</body>
+</html>
