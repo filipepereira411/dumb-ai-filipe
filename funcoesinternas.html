@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <title>Gestor de Câmara Interna</title>
+</head>
+<body>
+
+    <h1>Controlo de Periféricos Nativos</h1>
+    
+    <!-- Interface em HTML -->
+    <button id="ligarCamara">Ligar Câmara</button>
+    <br><br>
+    <video id="videoPlayer" autoplay playsinline style="width: 400px; background: #000;"></video>
+
+    <!-- Lógica de Gestão com JavaScript -->
+    <script>
+        const botao = document.getElementById('ligarCamara');
+        const video = document.getElementById('videoPlayer');
+
+        botao.addEventListener('click', async () => {
+            try {
+                // Solicita acesso à função interna de captura de vídeo
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+                // Atribui o fluxo do periférico ao elemento HTML
+                video.srcObject = stream;
+            </script>
+</body>
+</html>
