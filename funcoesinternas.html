@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Gestor de Câmara Interna & Rede</title>
+    <title>Gestor de Câmara Interna & Rede + IA</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { background: #000000; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; height: 100vh; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; }
@@ -12,16 +12,14 @@
         .selector-container { background: #111111; padding: 15px; border-bottom: 1px solid #222222; display: flex; justify-content: center; gap: 25px; z-index: 10; }
         .radio-option { display: flex; align-items: center; gap: 8px; color: #888888; font-size: 14px; font-weight: 600; cursor: pointer; user-select: none; transition: color 0.2s; }
         
-        /* Estilização da Bolinha Nativa */
         .radio-option input[type="radio"] { appearance: none; -webkit-appearance: none; width: 18px; height: 18px; border: 2px solid #555555; border-radius: 50%; outline: none; background: transparent; cursor: pointer; display: grid; place-content: center; transition: border-color 0.2s; }
         .radio-option input[type="radio"]::before { content: ""; width: 10px; height: 10px; border-radius: 50%; transform: scale(0); transition: 0.15s transform ease-in-out; background-color: #22c55e; }
         
-        /* Estados Ativos */
         .radio-option input[type="radio"]:checked { border-color: #22c55e; }
         .radio-option input[type="radio"]:checked::before { transform: scale(1); }
         .radio-option.active { color: #ffffff; }
 
-        /* Contentores Principais das Secções */
+        /* Contentores Principais */
         .app-section { display: none; flex: 1; width: 100%; overflow: hidden; position: relative; }
         .app-section.active { display: flex; flex-direction: column; }
 
@@ -41,6 +39,10 @@
         @keyframes flashAnim { 0% { opacity: 1; } 100% { opacity: 0; } }
         .placeholder-text { position: absolute; color: #666666; font-size: 14px; text-align: center; padding: 20px; z-index: 2; }
 
+        /* Caixa de Deteção de IA no Visor */
+        .ai-bounding-box { position: absolute; border: 2px dashed #00ff66; border-radius: 4px; display: none; z-index: 4; pointer-events: none; }
+        .ai-label { position: absolute; top: -22px; left: -2px; background: #00ff66; color: #000; font-size: 11px; font-weight: bold; padding: 2px 6px; border-radius: 2px 2px 0 0; white-space: nowrap; }
+
         /* Controlos Inferiores */
         .bottom-bar { height: 120px; background: #000000; display: flex; align-items: center; justify-content: space-around; padding: 0 20px; border-top: 1px solid #1a1a1a; width: 100%; }
         .cam-btn { width: 65px; height: 65px; border-radius: 50%; background: #ffffff; border: 5px solid #000000; box-shadow: 0 0 0 4px #ffffff; cursor: pointer; transition: transform 0.1s; }
@@ -50,52 +52,61 @@
         .side-btn.danger { color: #ef4444; border-color: #ef4444; visibility: hidden; }
         .side-btn.disabled { opacity: 0.2; pointer-events: none; }
 
-        /* --- ESTILOS DO PAINEL DE REDE --- */
+        /* --- ESTILOS DO PAINEL DE REDE & IA --- */
         .network-container { padding: 20px; color: #fff; display: flex; flex-direction: column; gap: 15px; }
         .ip-card { background: #111; border: 1px solid #222; border-radius: 12px; padding: 15px; }
-        .ip-card h3 { color: #22c55e; font-size: 13px; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .ip-card h3 { color: #22c55e; font-size: 13px; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px; }
         .ip-val { font-family: monospace; font-size: 18px; color: #fff; }
+
+        /* Painel Módulo IA */
+        .ai-panel { background: #111; border: 1px solid #00ff66; border-radius: 12px; padding: 15px; box-shadow: 0 0 10px rgba(0, 255, 102, 0.05); }
+        .ai-status { font-family: monospace; font-size: 13px; color: #a0aec0; margin-top: 8px; line-height: 1.6; }
+        .pulse-dot { inline-size: 8px; block-size: 8px; background-color: #00ff66; border-radius: 50%; display: inline-block; animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0% { transform: scale(0.9); opacity: 1; } 50% { transform: scale(1.2); opacity: 0.4; } 100% { transform: scale(0.9); opacity: 1; } }
 
         .remote-list { display: flex; flex-direction: column; gap: 10px; margin-top: 5px; }
         .remote-item { background: #111; border: 1px solid #222; border-radius: 8px; padding: 12px; display: flex; justify-content: space-between; align-items: center; }
         .remote-info p { font-size: 14px; font-weight: bold; color: #fff; }
         .remote-info span { font-size: 12px; color: #666; font-family: monospace; }
         
-        .action-btn { background: #22c55e; color: #000; border: none; padding: 8px 14px; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; transition: background 0.2s; }
-        .action-btn:hover { background: #16a34a; }
+        .action-btn { background: #22c55e; color: #000; border: none; padding: 8px 14px; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; }
+
+        /* --- PAINEL DE NOTAS FLUTUANTE --- */
+        .notes-widget { position: fixed; bottom: 135px; right: 20px; z-index: 100; background: #111; border: 1px solid #333; border-radius: 8px; width: 220px; overflow: hidden; transition: max-height 0.3s ease; max-height: 35px; }
+        .notes-widget.expanded { max-height: 150px; border-color: #22c55e; }
+        .notes-header { background: #1a1a1a; padding: 8px 12px; font-size: 11px; color: #aaa; font-weight: bold; display: flex; justify-content: space-between; cursor: pointer; }
+        .notes-content { padding: 10px; font-size: 12px; color: #ddd; display: flex; flex-direction: column; gap: 6px; line-height: 1.4; }
 
         canvas { display: none; }
     </style>
 </head>
 <body>
 
-    <!-- Menu Superior com Seletores Circulares (Bolinhas) -->
+    <!-- Seletores de Forma -->
     <div class="selector-container">
         <label class="radio-option active" id="lblCam">
-            <input type="radio" name="viewMode" value="cam" checked onclick="switchView('cam')">
+            <input type="radio" name="viewMode" id="radCam" value="cam" checked onclick="switchView('cam')">
             Câmara
         </label>
         <label class="radio-option" id="lblNet">
-            <input type="radio" name="viewMode" value="net" onclick="switchView('net')">
+            <input type="radio" name="viewMode" id="radNet" value="net" onclick="switchView('net')">
             Rede / IP
         </label>
         <label class="radio-option" id="lblBoth">
-            <input type="radio" name="viewMode" value="both" onclick="switchView('both')">
+            <input type="radio" name="viewMode" id="radBoth" value="both" onclick="switchView('both')">
             Ambos
         </label>
     </div>
 
-    <!-- VISTA 1: APENAS CÂMARA -->
+    <!-- VISTAS -->
     <div id="secCam" class="app-section active">
         <div id="cameraRoot"></div>
     </div>
 
-    <!-- VISTA 2: APENAS REDE -->
     <div id="secNet" class="app-section">
         <div id="networkRoot"></div>
     </div>
 
-    <!-- VISTA 3: AMBOS (SPLIT SCREEN) -->
     <div id="secBoth" class="app-section">
         <div class="split-container">
             <div id="splitLeftTarget" class="split-left"></div>
@@ -103,11 +114,17 @@
         </div>
     </div>
 
-    <!-- MARCAÇÕES GLOBAIS PARTILHADAS (Movidas dinamicamente via DOM) -->
+    <!-- MARCAÇÃO DA CÂMARA PARTILHADA -->
     <div id="sharedCameraMarkup" style="display: none;">
         <div class="viewer-container" style="height: calc(100% - 120px);">
             <div id="flash" class="flash-effect"></div>
             <div id="placeholder" class="placeholder-text">Dispositivo desligado. Clique no botão verde para iniciar o periférico.</div>
+            
+            <!-- Caixa Artificial de Reconhecimento IA -->
+            <div id="aiBox" class="ai-bounding-box">
+                <span class="ai-label">🤖 ALVO PAP (CONFIDENCIAL)</span>
+            </div>
+
             <video id="videoPlayer" autoplay playsinline></video>
         </div>
         <div class="bottom-bar">
@@ -117,8 +134,15 @@
         </div>
     </div>
 
+    <!-- MARCAÇÃO DA REDE + CO-PROCESSADOR IA PARTILHADO -->
     <div id="sharedNetworkMarkup" style="display: none;">
         <div class="network-container">
+            <!-- Módulo Adicionado: Inteligência Artificial (PAP Engine) -->
+            <div class="ai-panel">
+                <h3><span class="pulse-dot"></span> IA NATIVA - CO-PROCESSADOR</h3>
+                <div class="ai-status" id="aiStatusText">Hardware de Visão IA inativo. Aguarda ativação da câmara de periféricos...</div>
+            </div>
+
             <div class="ip-card">
                 <h3>O Seu IP Local (Intranet)</h3>
                 <div class="ip-val" id="localIP">192.168.1.15</div>
@@ -127,53 +151,8 @@
                 <h3>O Seu IP Público (Internet)</h3>
                 <div class="ip-val" id="publicIP">A carregar...</div>
             </div>
-            <div style="margin-top: 5px;">
+            <div>
                 <h3 style="font-size: 13px; color: #666; margin-bottom: 10px; text-transform: uppercase;">DISPOSITIVOS NA REDE</h3>
                 <div class="remote-list">
                     <div class="remote-item">
-                        <div class="remote-info">
-                            <p>Terminal Sala de Aula (PC-02)</p>
-                            <span>192.168.1.45</span>
-                        </div>
-                        <button class="action-btn" onclick="remoteControl('192.168.1.45')">Remotar</button>
-                    </div>
-                    <div class="remote-item">
-                        <div class="remote-info">
-                            <p>Servidor Local PAP</p>
-                            <span>192.168.1.100</span>
-                        </div>
-                        <button class="action-btn" onclick="remoteControl('192.168.1.100')">Remotar</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
 
-    <canvas id="captureCanvas"></canvas>
-
-    <script>
-        const cameraMarkup = document.getElementById('sharedCameraMarkup');
-        const networkMarkup = document.getElementById('sharedNetworkMarkup');
-
-        let currentStream = null;
-        let useFrontCamera = true;
-        let isCameraActive = false;
-
-        // Montagem estrutural inicial
-        window.addEventListener('DOMContentLoaded', () => {
-            document.getElementById('cameraRoot').appendChild(cameraMarkup);
-            document.getElementById('networkRoot').appendChild(networkMarkup);
-            cameraMarkup.style.display = 'block';
-            networkMarkup.style.display = 'block';
-            fetchPublicIP();
-        });
-
-        // Alternador de Vistas baseado nos Radio Buttons (Bolinhas)
-        function switchView(mode) {
-            // Repor estados de realce do texto das labels
-            document.querySelectorAll('.radio-option').forEach(lbl => lbl.classList.remove('active'));
-            document.querySelectorAll('.app-section').forEach(sec => sec.classList.remove('active'));
-            
-            if (mode === 'cam') {
-                document.getElementById('lblCam').classList.add('active');
-                document.getElementById('secCam').classList.add('active');
