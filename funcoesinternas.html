@@ -1,29 +1,169 @@
 <!DOCTYPE html>
-<html lang="pt">
+<html lang="pt-PT">
 <head>
     <meta charset="UTF-8">
-    <title>Gestor de Câmara Interna</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Gestor de Câmara Interna - PAP</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #000000; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; height: 100vh; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; }
+
+        /* Título superior integrado do segundo ficheiro */
+        .header-title { background: rgba(0, 0, 0, 0.8); color: white; text-align: center; padding: 15px 10px; font-size: 16px; border-bottom: 1px solid #1a1a1a; z-index: 10; }
+        .header-title h1 { font-size: 18px; font-weight: 600; }
+
+        /* Contentor do visor da câmara */
+        .viewer-container { position: relative; flex: 1; width: 100%; background: #000; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+        
+        /* ID unificado: videoPlayer */
+        video { width: 100%; height: 100%; object-fit: cover; }
+        video.mirror { transform: scaleX(-1); }
+
+        /* Animação do Flash */
+        .flash-effect { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #ffffff; opacity: 0; z-index: 5; pointer-events: none; }
+        .flash-effect.active { animation: flashAnim 0.3s ease-out; }
+        @keyframes flashAnim { 0% { opacity: 1; } 100% { opacity: 0; } }
+
+        /* Barra de Controlos Inferior */
+        .bottom-bar { height: 120px; background: rgba(0, 0, 0, 0.95); display: flex; align-items: center; justify-content: space-around; padding: 0 20px; z-index: 10; border-top: 1px solid #1a1a1a; }
+
+        /* ID unificado/Adaptado: ligarCamara (Estilo Obturador) */
+        .shutter-btn { width: 70px; height: 70px; border-radius: 50%; background: #ffffff; border: 5px solid #000000; box-shadow: 0 0 0 4px #ffffff; cursor: pointer; transition: transform 0.1s; -webkit-tap-highlight-color: transparent; }
+        .shutter-btn:active { transform: scale(0.9); background: #e2e8f0; }
+
+        .flip-btn { width: 45px; height: 45px; border-radius: 50%; background: #222222; border: none; color: #ffffff; font-size: 20px; display: flex; align-items: center; justify-content: center; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+        .gallery-preview { width: 45px; height: 45px; border-radius: 8px; background: #222222; border: 2px solid #ffffff; background-size: cover; background-position: center; display: flex; align-items: center; justify-content: center; color: #ffffff; font-size: 18px; }
+
+        /* Ecrã de Boas-vindas Inicial */
+        .init-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000000; z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; gap: 15px; }
+        .init-btn { background: #ffffff; color: #000000; border: none; padding: 15px 40px; font-size: 16px; font-weight: bold; border-radius: 30px; cursor: pointer; }
+
+        canvas { display: none; }
+    </style>
 </head>
 <body>
 
-    <h1>Controlo de Periféricos Nativos</h1>
-    
-    <!-- Interface em HTML -->
-    <button id="ligarCamara">Ligar Câmara</button>
-    <br><br>
-    <video id="videoPlayer" autoplay playsinline style="width: 400px; background: #000;"></video>
+    <!-- Janela inicial para capturar a permissão do utilizador -->
+    <div id="initOverlay" class="init-overlay">
+        <h2>Controlo de Periféricos Nativos</h2>
+        <p style="color: #a0aec0; font-size: 14px; text-align: center; padding: 0 20px;">Clique abaixo para ativar o Gestor de Câmara Interna.</p>
+        <!-- Mantido o ID original do botão de ação -->
+        <button id="ligarCamara" class="init-btn">Ligar Câmara</button>
+    </div>
 
-    <!-- Lógica de Gestão com JavaScript -->
+    <!-- Título do topo integrado do segundo ficheiro -->
+    <div class="header-title">
+        <h1>Controlo de Periféricos Nativos</h1>
+    </div>
+
+    <!-- Visor Principal com a ID unificada: videoPlayer -->
+    <div class="viewer-container">
+        <div id="flash" class="flash-effect"></div>
+        <video id="videoPlayer" autoplay playsinline class="mirror"></video>
+    </div>
+
+    <!-- Interface Estilo Aplicação Nativa -->
+    <div class="bottom-bar">
+        <div id="preview" class="gallery-preview">📁</div>
+        <!-- Botão de disparo físico visual -->
+        <button class="shutter-btn" onclick="capturePhoto()"></button>
+        <button class="flip-btn" onclick="switchCamera()">🔄</button>
+    </div>
+
+    <canvas id="captureCanvas"></canvas>
+
     <script>
-        const botao = document.getElementById('ligarCamara');
+        // Unificação e mapeamento de IDs do segundo ficheiro
+        const botaoLigar = document.getElementById('ligarCamara');
         const video = document.getElementById('videoPlayer');
+        
+        let currentStream = null;
+        let useFrontCamera = true;
 
-        botao.addEventListener('click', async () => {
+        // Escuta o clique do botão "Ligar Câmara" original para iniciar tudo
+        botaoLigar.addEventListener('click', async () => {
+            document.getElementById('initOverlay').style.display = 'none';
+            await initCamera();
+        });
+
+        // Lógica de Gestão com JavaScript unificada e corrigida
+        async function initCamera() {
+            if (currentStream) {
+                currentStream.getTracks().forEach(track => track.stop());
+            }
+
+            const mode = useFrontCamera ? "user" : "environment";
+
             try {
                 // Solicita acesso à função interna de captura de vídeo
-                const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
-                // Atribui o fluxo do periférico ao elemento HTML
-                video.srcObject = stream;
-            </script>
+                currentStream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { 
+                        facingMode: mode,
+                        width: { ideal: 1920 },
+                        height: { ideal: 1080 }
+                    }, 
+                    audio: false 
+                });
+                
+                // Atribui o fluxo do periférico ao elemento HTML unificado
+                video.srcObject = currentStream;
+
+                if (useFrontCamera) {
+                    video.classList.add('mirror');
+                } else {
+                    video.classList.remove('mirror');
+                }
+            } catch (err) {
+                console.error("Erro ao aceder ao periférico:", err);
+                alert("Não foi possível aceder à câmara interna.");
+                document.getElementById('initOverlay').style.display = 'flex';
+            }
+        }
+
+        // Alternador de Câmaras
+        async function switchCamera() {
+            useFrontCamera = !useFrontCamera;
+            await initCamera();
+        }
+
+        // Captura de Foto e Download Automático
+        function capturePhoto() {
+            const canvas = document.getElementById('captureCanvas');
+            const flash = document.getElementById('flash');
+            const preview = document.getElementById('preview');
+            const context = canvas.getContext('2d');
+
+            if (!video.srcObject || video.readyState !== video.HAVE_ENOUGH_DATA) return;
+
+            flash.classList.add('active');
+            setTimeout(() => flash.classList.remove('active'), 300);
+
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            context.setTransform(1, 0, 0, 1, 0, 0);
+
+            if (useFrontCamera) {
+                context.translate(canvas.width, 0);
+                context.scale(-1, 1);
+            }
+            
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            try {
+                const imageData = canvas.toDataURL('image/png');
+                preview.style.backgroundImage = `url('${imageData}')`;
+                preview.innerText = ''; 
+
+                const downloadLink = document.createElement('a');
+                downloadLink.download = `IMG_${Date.now()}.png`;
+                downloadLink.href = imageData;
+                document.body.appendChild(downloadLink);
+                downloadLink.click();
+                document.body.removeChild(downloadLink);
+            } catch (error) {
+                console.error("Erro ao processar captura:", error);
+            }
+        }
+    </script>
 </body>
 </html>
