@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FilipeAI</title>
+    <title>FilipeAI - Chat</title>
     <style>
         * {
             margin: 0;
@@ -13,21 +13,23 @@
 
         body {
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
             background-color: #0d1117;
             font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            overflow: hidden;
+            color: #ffffff;
+            padding: 20px;
         }
 
         .ai-container {
             text-align: center;
-            position: relative;
+            margin-bottom: 30px;
         }
 
         .ai-text {
-            font-size: 5rem;
+            font-size: 4rem;
             font-weight: 800;
             letter-spacing: 2px;
             text-transform: uppercase;
@@ -39,10 +41,10 @@
         }
 
         .ai-badge {
-            margin-top: 10px;
+            margin-top: 5px;
             display: inline-block;
-            padding: 5px 15px;
-            font-size: 0.9rem;
+            padding: 3px 12px;
+            font-size: 0.8rem;
             color: #00f2fe;
             border: 1px solid #00f2fe;
             border-radius: 20px;
@@ -51,21 +53,102 @@
             box-shadow: 0 0 10px rgba(0, 242, 254, 0.2);
         }
 
+        /* Caixa de Chat */
+        .chat-wrapper {
+            width: 100%;
+            max-width: 600px;
+            background: rgba(22, 27, 34, 0.8);
+            border: 1px solid #30363d;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .chat-box {
+            height: 350px;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        /* Balões de Mensagem */
+        .message {
+            max-width: 80%;
+            padding: 12px 16px;
+            border-radius: 14px;
+            font-size: 0.95rem;
+            line-height: 1.4;
+            word-break: break-word;
+        }
+
+        .message.user {
+            background-color: #238636;
+            color: #ffffff;
+            align-self: flex-end;
+            border-bottom-right-radius: 2px;
+        }
+
+        .message.ai {
+            background-color: #21262d;
+            color: #c9d1d9;
+            align-self: flex-start;
+            border-bottom-left-radius: 2px;
+            border: 1px solid #30363d;
+        }
+
+        /* Área de Input */
+        .input-area {
+            display: flex;
+            padding: 15px;
+            background: #161b22;
+            border-top: 1px solid #30363d;
+            gap: 10px;
+        }
+
+        .input-area input {
+            flex: 1;
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 12px;
+            color: #ffffff;
+            font-size: 0.95rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .input-area input:focus {
+            border-color: #58a6ff;
+        }
+
+        .input-area button {
+            background: linear-gradient(45deg, #00f2fe, #4facfe);
+            border: none;
+            border-radius: 8px;
+            padding: 0 20px;
+            color: #0d1117;
+            font-weight: bold;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        .input-area button:hover {
+            opacity: 0.9;
+        }
+
         @keyframes glow {
-            0% {
-                background-position: 0% 50%;
-                filter: drop-shadow(0 0 2px rgba(0, 242, 254, 0.4));
-            }
-            100% {
-                background-position: 100% 50%;
-                filter: drop-shadow(0 0 15px rgba(79, 172, 254, 0.8));
-            }
+            0% { background-position: 0% 50%; filter: drop-shadow(0 0 2px rgba(0, 242, 254, 0.3)); }
+            100% { background-position: 100% 50%; filter: drop-shadow(0 0 12px rgba(79, 172, 254, 0.6)); }
         }
 
         @media (max-width: 600px) {
-            .ai-text {
-                font-size: 3rem;
-            }
+            .ai-text { font-size: 2.5rem; }
+            .chat-box { height: 280px; }
         }
     </style>
 </head>
@@ -73,8 +156,67 @@
 
     <div class="ai-container">
         <h1 class="ai-text">FilipeAI</h1>
-        <div class="ai-badge">Artificial Intelligence</div>
+        <div class="ai-badge">Online</div>
     </div>
+
+    <div class="chat-wrapper">
+        <div class="chat-box" id="chatBox">
+            <div class="message ai">Olá! Eu sou o FilipeAI. Como posso ajudar-te hoje?</div>
+        </div>
+        <div class="input-area">
+            <input type="text" id="userInput" placeholder="Escreve uma mensagem..." autocomplete="off">
+            <button onclick="sendMessage()">Enviar</button>
+        </div>
+    </div>
+
+    <script>
+        const chatBox = document.getElementById('chatBox');
+        const userInput = document.getElementById('userInput');
+
+        // Respostas automáticas simuladas da IA
+        const aiResponses = [
+            "Estou aqui para processar qualquer comando.",
+            "Interessante! Conta-me mais sobre isso.",
+            "Como inteligência artificial avançada, estou pronta para o próximo passo.",
+            "O meu sistema está a funcionar com 100% de eficiência.",
+            "FilipeAI compreendeu a tua mensagem perfeitamente."
+        ];
+
+        function sendMessage() {
+            const text = userInput.value.trim();
+            if (!text) return;
+
+            // 1. Adicionar mensagem do utilizador
+            appendMessage(text, 'user');
+            userInput.value = '';
+
+            // 2. Simular efeito de "A digitar..."
+            const typingDiv = appendMessage('A digitar...', 'ai');
+            
+            setTimeout(() => {
+                // Remover o indicador de digitação e colocar a resposta final
+                typingDiv.remove();
+                const randomResponse = aiResponses[Math.floor(Math.random() * aiResponses.length)];
+                appendMessage(randomResponse, 'ai');
+            }, 1200);
+        }
+
+        function appendMessage(text, sender) {
+            const msgDiv = document.createElement('div');
+            msgDiv.classList.add('message', sender);
+            msgDiv.innerText = text;
+            chatBox.appendChild(msgDiv);
+            chatBox.scrollTop = chatBox.scrollHeight; // Scroll automático para baixo
+            return msgDiv;
+        }
+
+        // Permitir enviar pressionando a tecla Enter
+        userInput.addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+    </script>
 
 </body>
 </html>
