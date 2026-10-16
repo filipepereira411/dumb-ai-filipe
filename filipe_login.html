@@ -3,20 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FilipeAI - Chat com Login e Notas</title>
+    <title>FilipeAI - Chat com Login</title>
     
     <!-- 
       ========================================================================
-      NOTAS DE DESENVOLVIMENTO / ARQUITETURA DO SISTEMA:
-      1. SEGURANÇA: Este sistema usa credenciais fixas expostas no código do lado
-         do cliente (Client-Side). Para ambientes de produção real, as validações
-         devem ser feitas através de um servidor (Back-End) e base de dados.
-      2. PERSISTÊNCIA: Os dados da sessão e as mensagens não são guardados ao 
-         recarregar a página (F5). Para manter as sessões ativas, seria necessário
-         implementar localStorage ou Cookies.
-      3. CREDENCIAIS PADRÃO PARA TESTE:
-         - Utilizador: filipe
-         - Palavra-passe: 1234
+      CREDENCIAIS PADRÃO PARA TESTE:
+      - Utilizador: filipe
+      - Palavra-passe: 1234
       ========================================================================
     -->
 
@@ -33,13 +26,12 @@
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            background-color: #0d1117; /* Tom escuro padrão estilo GitHub */
+            background-color: #0d1117;
             font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             color: #ffffff;
             padding: 20px;
         }
 
-        /* Cabeçalho Principal */
         .ai-container {
             text-align: center;
             margin-bottom: 20px;
@@ -57,7 +49,7 @@
             animation: glow 3s ease infinite alternate;
         }
 
-        /* NOTA DE DESIGN: Cartão de Autenticação (Ecrã de Login) */
+        /* CAIXA DE LOGIN - VAI APARECER IMEDIATAMENTE */
         .auth-card {
             width: 100%;
             max-width: 400px;
@@ -67,6 +59,7 @@
             padding: 30px;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
             text-align: center;
+            display: block; /* Garante que fica visível ao carregar */
         }
 
         .auth-card h2 {
@@ -119,10 +112,10 @@
             color: #f85149;
             font-size: 0.85rem;
             margin-top: 10px;
-            display: none; /* Só aparece via JS em caso de erro */
+            display: none;
         }
 
-        /* NOTA DE DESIGN: Estrutura do Contentor do Chat */
+        /* INTERFACE DO CHAT (ESCONDIDA ATÉ FAZER LOGIN) */
         .chat-wrapper {
             width: 100%;
             max-width: 600px;
@@ -130,7 +123,7 @@
             border: 1px solid #30363d;
             border-radius: 16px;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
-            display: none; /* Escondido por padrão, ativado após login */
+            display: none; /* Escondido no início */
             flex-direction: column;
             overflow: hidden;
         }
@@ -179,7 +172,6 @@
             gap: 15px;
         }
 
-        /* Balões de Mensagem */
         .message {
             max-width: 80%;
             padding: 12px 16px;
@@ -246,12 +238,11 @@
 </head>
 <body>
 
-    <!-- Título do Sistema -->
     <div class="ai-container">
         <h1 class="ai-text">FilipeAI</h1>
     </div>
 
-    <!-- BLOCO 1: Interface de Login -->
+    <!-- CAIXA DE LOGIN -->
     <div class="auth-card" id="authCard">
         <h2>Aceder ao Sistema</h2>
         <div class="input-group">
@@ -266,7 +257,7 @@
         <div class="error-message" id="errorMessage">Utilizador ou palavra-passe incorretos!</div>
     </div>
 
-    <!-- BLOCO 2: Interface de Conversação (Inicialmente oculta) -->
+    <!-- INTERFACE DE CHAT (SÓ ATIVA APÓS LOGIN) -->
     <div class="chat-wrapper" id="chatWrapper">
         <div class="chat-header">
             <div class="user-info">Sessão iniciada como: <span id="displayUser"></span></div>
@@ -281,9 +272,7 @@
         </div>
     </div>
 
-    <!-- LÓGICA DO SISTEMA (JAVASCRIPT) -->
     <script>
-        // Mapeamento dos elementos estruturais da página
         const authCard = document.getElementById('authCard');
         const chatWrapper = document.getElementById('chatWrapper');
         const usernameInput = document.getElementById('username');
@@ -293,19 +282,43 @@
         const chatBox = document.getElementById('chatBox');
         const userInput = document.getElementById('userInput');
 
-        // NOTA: Base de dados simulada localmente no código
+        // Credenciais estipuladas nas notas
         const CREDENTIALS = { user: "filipe", pass: "1234" };
 
-        /**
-         * Executa o processo de Login.
-         * Avalia as entradas e altera o display CSS para comutar as interfaces.
-         */
         function handleLogin() {
             const user = usernameInput.value.trim();
             const pass = passwordInput.value;
 
-            // Validação estrita baseada no objeto CREDENTIALS
             if (user === CREDENTIALS.user && pass === CREDENTIALS.pass) {
-                authCard.style.display = 'none';      // Oculta bloco de login
-                chatWrapper.style.display = 'flex';   // Exibe bloco do chat
-                displayUser.innerText = user;         // Exibe o utilizador ativo no topo
+                authCard.style.display = 'none';      
+                chatWrapper.style.display = 'flex';   
+                displayUser.innerText = user;         
+                errorMessage.style.display = 'none';  
+                usernameInput.value = '';
+                passwordInput.value = '';
+            } else {
+                errorMessage.style.display = 'block'; 
+            }
+        }
+
+        function handleLogout() {
+            chatWrapper.style.display = 'none';       
+            authCard.style.display = 'block';         
+            chatBox.innerHTML = '<div class="message ai">Autenticação bem-sucedida! Como posso ajudar-te hoje?</div>';
+        }
+
+        const aiResponses = [
+            "Estou aqui para processar qualquer comando.",
+            "Interessante! Conta-me mais sobre isso.",
+            "Como inteligência artificial avançada, estou pronta para o próximo passo.",
+            "O meu sistema está a funcionar com 100% de eficiência.",
+            "FilipeAI compreendeu a tua mensagem perfeitamente."
+        ];
+
+        function sendMessage() {
+            const text = userInput.value.trim();
+            if (!text) return;
+
+            appendMessage(text, 'user');
+            userInput.value = '';
+
