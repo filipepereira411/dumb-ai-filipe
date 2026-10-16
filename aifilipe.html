@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FilipeAI - Sistema Totalmente Ativo</title>
+    <title>FilipeAI - OpenAI API Connected</title>
     <style>
         * {
             margin: 0;
@@ -148,15 +148,15 @@
 
     <div class="ai-container">
         <h1 class="ai-text">FilipeAI</h1>
-        <div class="ai-badge">Sistema Forçado Ativo</div>
+        <div class="ai-badge">OpenAI Link Ativo</div>
     </div>
 
     <div class="chat-wrapper">
         <div class="chat-box" id="chatBox">
-            <div class="message ai">Olá, Filipe! O sistema está blindado. O motor online está ativo, mas caso haja alguma quebra na rede, o meu núcleo local assume o controlo para responder sempre. O que queres perguntar?</div>
+            <div class="message ai">Olá, Filipe! O sistema está mapeado para ligar à API oficial da OpenAI. Insere o teu token de desenvolvimento na variável do script e inicia a conversa!</div>
         </div>
         <div class="input-area">
-            <input type="text" id="userInput" placeholder="Faz qualquer pergunta à IA..." autocomplete="off">
+            <input type="text" id="userInput" placeholder="Escreve uma mensagem para a OpenAI..." autocomplete="off">
             <button id="sendBtn" onclick="sendMessage()">Enviar</button>
         </div>
     </div>
@@ -166,69 +166,61 @@
         const userInput = document.getElementById('userInput');
         const sendBtn = document.getElementById('sendBtn');
 
-        // Banco de dados interno para o modo de segurança forçado offline
-        const localFallbackResponses = [
-            "Compreendi perfeitamente. O meu núcleo processou a tua questão e estou pronto para avançar.",
-            "Excelente ponto! Analisando os parâmetros internos, isso faz todo o sentido.",
-            "Como inteligência artificial estável, garanto-te que o processamento está concluído.",
-            "Essa questão é de extremo interesse. O que mais gostarias de aprofundar sobre isso?",
-            "Processado com sucesso pelo motor local redundante do FilipeAI."
+        // 🔑 ADICIONE A SUA CHAVE PRIVADA DA OPENAI AQUI (Substitua as aspas pelo seu sk-...)
+        const OPENAI_API_KEY = "sk-insira-aqui-a-sua-chave";
+
+        // Histórico de conversação estruturado para manter o contexto na API da OpenAI
+        let conversationHistory = [
+            { role: "system", content: "Tu és o FilipeAI, um assistente virtual inteligente. Responde em português de Portugal de forma concisa e natural." }
         ];
 
         async function sendMessage() {
             const text = userInput.value.trim();
             if (!text) return;
 
-            // Insere a mensagem do utilizador e bloqueia a interface
+            // Altera elementos da interface e tranca contra cliques simultâneos
             appendMessage(text, 'user');
             userInput.value = '';
             userInput.disabled = true;
             sendBtn.disabled = true;
 
-            const typingDiv = appendMessage('A processar dados no motor...', 'ai');
+            conversationHistory.push({ role: "user", content: text });
+            const typingDiv = appendMessage('A comunicar com os servidores OpenAI...', 'ai');
 
             try {
-                const systemPrompt = "Tu és o FilipeAI. Responde sempre em português de Portugal, de forma inteligente, curta e prestativa.";
-                const url = `https://pollinations.ai{encodeURIComponent(text)}?system=${encodeURIComponent(systemPrompt)}&model=openai`;
-                
-                // Força um limite de tempo (timeout) de 4 segundos na rede
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 4000);
+                // Pedido POST padrão para a API da OpenAI
+                const response = await fetch('https://openai.com', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${OPENAI_API_KEY}`
+                    },
+                    body: JSON.stringify({
+                        model: "gpt-4o-mini", // Modelo leve, rápido e mais barato da OpenAI
+                        messages: conversationHistory,
+                        temperature: 0.7
+                    })
+                });
 
-                const response = await fetch(url, { signal: controller.signal });
-                clearTimeout(timeoutId);
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error ? errorData.error.message : 'Falha na autenticação');
+                }
 
-                if (!response.ok) throw new Error('Servidor indisponível');
-                
-                const aiReply = await response.text();
+                const data = await response.json();
                 typingDiv.remove();
+
+                // Captura e exibe o texto gerado pela resposta da OpenAI
+                const aiReply = data.choices[0].message.content;
                 appendMessage(aiReply, 'ai');
+                conversationHistory.push({ role: "assistant", content: aiReply });
 
             } catch (error) {
-                // SE A REDE FALHAR OU DEMORAR MUITO, ESTE BLOCO SÓ SE ATIVA E FORÇA A RESPOSTA
-                console.log("Modo de segurança forçado ativado: ", error);
-                
-                setTimeout(() => {
-                    typingDiv.remove();
-                    
-                    // Respostas inteligentes baseadas em palavras-chave se estiver local
-                    let matchedReply = "";
-                    const lowerText = text.toLowerCase();
-                    
-                    if (lowerText.includes("olá") || lowerText.includes("boas")) {
-                        matchedReply = "Olá, Filipe! O meu sistema local respondeu ao teu cumprimento. Como posso ajudar-te hoje?";
-                    } else if (lowerText.includes("quem és") || lowerText.includes("teu nome")) {
-                        matchedReply = "Eu sou o FilipeAI, uma inteligência artificial resiliente adaptada para funcionar em qualquer cenário.";
-                    } else {
-                        // Escolha pseudo-aleatória estável do banco secundário
-                        matchedReply = localFallbackResponses[Math.floor(Math.random() * localFallbackResponses.length)];
-                    }
-                    
-                    appendMessage(matchedReply, 'ai');
-                }, 600); // Resposta simulada imediata
-
+                typingDiv.remove();
+                appendMessage(`Erro na OpenAI API: ${error.message}. Verifica se inseriste a tua chave sk-... correta ou se tens saldo na conta.`, 'ai');
+                console.error(error);
             } finally {
-                // Desbloqueia os controlos do ecrã
+                // Reativa controlos de formulário
                 userInput.disabled = false;
                 sendBtn.disabled = false;
                 userInput.focus();
