@@ -3,13 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FilipeAI - Chat com Login</title>
+    <title>FilipeAI - Chat com Login e Notas</title>
     
     <!-- 
       ========================================================================
-      CREDENCIAIS PADRÃO PARA TESTE:
-      - Utilizador: filipe
-      - Palavra-passe: 1234
+      NOTAS DE CONFIGURAÇÃO DO SISTEMA:
+      
+      🔑 DADOS DE LOGIN OFICIAIS:
+         - UTILIZADOR: filipe
+         - PALAVRA-PASSE: 1234
+         
+      📌 INSTRUÇÕES:
+         Insira estes dados no formulário abaixo para desbloquear o chat.
       ========================================================================
     -->
 
@@ -49,7 +54,7 @@
             animation: glow 3s ease infinite alternate;
         }
 
-        /* CAIXA DE LOGIN - VAI APARECER IMEDIATAMENTE */
+        /* Ecrã de Login */
         .auth-card {
             width: 100%;
             max-width: 400px;
@@ -59,7 +64,7 @@
             padding: 30px;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
             text-align: center;
-            display: block; /* Garante que fica visível ao carregar */
+            display: block;
         }
 
         .auth-card h2 {
@@ -115,7 +120,7 @@
             display: none;
         }
 
-        /* INTERFACE DO CHAT (ESCONDIDA ATÉ FAZER LOGIN) */
+        /* Interface do Chat (Invisível até ao login) */
         .chat-wrapper {
             width: 100%;
             max-width: 600px;
@@ -123,7 +128,7 @@
             border: 1px solid #30363d;
             border-radius: 16px;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
-            display: none; /* Escondido no início */
+            display: none;
             flex-direction: column;
             overflow: hidden;
         }
@@ -242,7 +247,7 @@
         <h1 class="ai-text">FilipeAI</h1>
     </div>
 
-    <!-- CAIXA DE LOGIN -->
+    <!-- CARD DE LOGIN -->
     <div class="auth-card" id="authCard">
         <h2>Aceder ao Sistema</h2>
         <div class="input-group">
@@ -257,7 +262,7 @@
         <div class="error-message" id="errorMessage">Utilizador ou palavra-passe incorretos!</div>
     </div>
 
-    <!-- INTERFACE DE CHAT (SÓ ATIVA APÓS LOGIN) -->
+    <!-- BOX DE CHAT -->
     <div class="chat-wrapper" id="chatWrapper">
         <div class="chat-header">
             <div class="user-info">Sessão iniciada como: <span id="displayUser"></span></div>
@@ -282,7 +287,7 @@
         const chatBox = document.getElementById('chatBox');
         const userInput = document.getElementById('userInput');
 
-        // Credenciais estipuladas nas notas
+        // Configuração das Credenciais do Sistema
         const CREDENTIALS = { user: "filipe", pass: "1234" };
 
         function handleLogin() {
