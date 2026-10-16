@@ -148,12 +148,12 @@
 
     <div class="ai-container">
         <h1 class="ai-text">FilipeAI</h1>
-        <div class="ai-badge">Chave de API Ativa</div>
+        <div class="ai-badge">Web Ativa</div>
     </div>
 
     <div class="chat-wrapper">
         <div class="chat-box" id="chatBox">
-            <div class="message ai">Olá, Filipe! O motor de ligação foi corrigido para o protocolo seguro local. Podes escrever a tua mensagem que irei responder usando a tua chave privada da Pollinations agora mesmo!</div>
+            <div class="message ai">Olá, Filipe! O sistema está pronto e a funcionar de forma direta pela Web pública. Podes fazer qualquer pergunta!</div>
         </div>
         <div class="input-area">
             <input type="text" id="userInput" placeholder="Pergunta o que quiseres à IA..." autocomplete="off">
@@ -166,43 +166,40 @@
         const userInput = document.getElementById('userInput');
         const sendBtn = document.getElementById('sendBtn');
 
-        // A tua chave privada autenticada
-        const API_KEY = "pk_3hhjzgPIuPeBT9oo";
-
         async function sendMessage() {
             const text = userInput.value.trim();
             if (!text) return;
 
-            // Insere mensagem no ecrã e tranca inputs
+            // Insere a mensagem do utilizador e bloqueia controlos temporariamente
             appendMessage(text, 'user');
             userInput.value = '';
             userInput.disabled = true;
             sendBtn.disabled = true;
 
-            const typingDiv = appendMessage('A processar resposta na rede...', 'ai');
+            const typingDiv = appendMessage('A processar resposta na Web...', 'ai');
 
             try {
-                // Configuração do prompt do sistema para garantir respostas em português
+                // Definição das instruções base da IA
                 const systemPrompt = "Tu és o FilipeAI. Responde sempre em português de Portugal, de forma inteligente, curta e prestativa.";
                 
-                // Pedido via GET direto (aceite pelo navegador localmente e na Vercel com Chave Privada)
-                const url = `https://pollinations.ai{encodeURIComponent(text)}?system=${encodeURIComponent(systemPrompt)}&model=openai&code=${API_KEY}`;
+                // Pedido seguro via endpoint público sem necessidade de tokens privados
+                const url = `https://pollinations.ai{encodeURIComponent(text)}?system=${encodeURIComponent(systemPrompt)}&model=openai`;
                 
                 const response = await fetch(url);
-                if (!response.ok) throw new Error('Erro no servidor');
+                if (!response.ok) throw new Error('Erro na rede');
                 
                 const aiReply = await response.text();
                 typingDiv.remove();
 
-                // Exibe a resposta oficial da inteligência artificial
+                // Mostra a resposta real do motor inteligente
                 appendMessage(aiReply, 'ai');
 
             } catch (error) {
                 typingDiv.remove();
-                appendMessage('Não foi possível obter dados. Garante que estás ligado à Internet ou tenta novamente.', 'ai');
+                appendMessage('Serviço temporariamente indisponível. Tenta novamente mais tarde.', 'ai');
                 console.error(error);
             } finally {
-                // Liberta os controlos do ecrã
+                // Desbloqueia os controlos do ecrã
                 userInput.disabled = false;
                 sendBtn.disabled = false;
                 userInput.focus();
